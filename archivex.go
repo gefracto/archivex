@@ -6,11 +6,24 @@
 
 package archivex
 
+// #include <zip.h>
+// int del(char *name, char *zipname)
+// {
+//	  struct zip *archive;
+//    int err;
+//    archive = zip_open(zipname, 1, &err);
+//    zip_delete(archive, zip_name_locate(archive, name, ZIP_FL_ENC_UTF_8));
+//    zip_close(archive);
+//    return err;
+// }
+// #cgo LDFLAGS: -lzip
+import "C"
 import (
 	"archive/tar"
 	"archive/zip"
 	"bufio"
 	"compress/gzip"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -27,6 +40,7 @@ type Archivex interface {
 	AddFile(name string) error
 	AddAll(dir string, includeCurrentFolder bool) error
 	Close() error
+	Delete(name string) error
 }
 
 // ArchiveWriteFunc is the closure used by an archive's AddAll method to actually put a file into an archive
@@ -124,6 +138,15 @@ func (z *ZipFile) AddFile(name string) error {
 		zippedFile.Write(bytes[:readedBytes])
 	}
 
+	return nil
+}
+
+//Delete delete a file from zip
+func (z *ZipFile) Delete(name string) error {
+	e := C.del(C.CString(name), C.CString(z.Name))
+	if e != 0 {
+		return errors.New("Couldn't delete file.")
+	}
 	return nil
 }
 
